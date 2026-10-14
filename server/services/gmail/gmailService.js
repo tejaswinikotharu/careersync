@@ -185,17 +185,12 @@ const syncUserEmails = async (userId) => {
         console.log(`searchQuery: "${searchQuery}"`);
         console.log(`=========================`);
 
-        const MAX_PAGES = 10;
+        const MAX_PAGES = 2; // Fetch up to 2 pages (up to 100 recent emails) per sync cycle for fast, reliable processing
         let pageToken = null;
         let pageNumber = 1;
         const messages = [];
 
         do {
-            if (pageNumber > MAX_PAGES) {
-                console.error(`[GmailSync] Unexpected pagination limit reached. Aborting sync page count safety check.`);
-                throw new Error("Unexpected pagination limit reached.");
-            }
-
             const listParams = {
                 userId: "me",
                 q: searchQuery,
@@ -222,6 +217,11 @@ const syncUserEmails = async (userId) => {
 
             pageToken = listRes.data.nextPageToken;
             pageNumber++;
+
+            if (pageNumber > MAX_PAGES) {
+                console.log(`[GmailSync] Page limit reached (${MAX_PAGES} pages, ${messages.length} messages fetched). Proceeding to message processing.`);
+                break;
+            }
         } while (pageToken);
 
         emailsFetchedCount = messages.length;
